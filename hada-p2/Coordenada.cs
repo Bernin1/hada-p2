@@ -8,6 +8,7 @@ namespace Hada
 {
     public class Coordenada
     {
+        // Atributos
         private int fila;
         private int columna;
 
@@ -31,6 +32,7 @@ namespace Hada
                 columna = value;
             }
         }
+        // Constructores
         public Coordenada()
         {
             Fila = 0;
@@ -54,7 +56,7 @@ namespace Hada
             Fila = coordenada.Fila;
             Columna = coordenada.Columna;
         }
-
+        // Métodos
         public override string ToString()
         {
             return $"({Fila}, {Columna})";
