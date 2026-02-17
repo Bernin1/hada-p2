@@ -56,7 +56,7 @@ namespace Hada
             Fila = coordenada.Fila;
             Columna = coordenada.Columna;
         }
-        // Métodos
+        // Métodoss
         public override string ToString()
         {
             return $"({Fila}, {Columna})";
