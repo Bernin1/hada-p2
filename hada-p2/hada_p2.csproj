@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2B1F9766-6D58-4226-9A19-A4B3D43CB074}</ProjectGuid>
+    <ProjectGuid>{BB2AD5C2-587A-4400-BD19-8BA8CE2DD105}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>hada_p2</RootNamespace>
     <AssemblyName>hada-p2</AssemblyName>
