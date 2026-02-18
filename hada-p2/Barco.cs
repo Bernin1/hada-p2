@@ -48,7 +48,7 @@ namespace Hada
         }
 
         //Método que recibe una coord de disparo, verifica impacto en barco y actlz estado
-        public void Disparo(Coordenada c)
+        public void Disparar(Coordenada c)
         {
             if (this.CoordenadasBarco.ContainsKey(c))
             {
