@@ -1,9 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -48,7 +42,7 @@ namespace Hada
         }
 
         //Método que recibe una coord de disparo, verifica impacto en barco y actlz estado
-        public void Disparar(Coordenada c)
+        public void Disparo(Coordenada c)
         {
             if (this.CoordenadasBarco.ContainsKey(c))
             {
@@ -61,7 +55,7 @@ namespace Hada
 
                     eventoTocado?.Invoke(this, new TocadoArgs(this.Nombre, c));
 
-                    if (Hundido())
+                    if (hundido())
                     {
                         eventoHundido?.Invoke(this, new HundidoArgs(this.Nombre));
                     }
@@ -69,9 +63,8 @@ namespace Hada
             }
         }
 
-
         //Método que verifica si el barco está hundido
-        public bool Hundido()
+        public bool hundido()
         {
             foreach (var etiqueta in this.CoordenadasBarco.Values)
             {
@@ -89,13 +82,15 @@ namespace Hada
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"[{this.Nombre}]");
             sb.AppendLine($"DAÑOS: [{this.NumDanyos}]");
-            sb.AppendLine($"HUNDIDO: [{Hundido()}]");
+            sb.AppendLine($"HUNDIDO: [{hundido()}]");
 
             sb.Append("COORDENADAS: ");
+            List<string> coordsList = new List<string>();
             foreach (var item in this.CoordenadasBarco)
             {
-                sb.Append($"[{item.Key.ToString()} :{item.Value}] ");
+                coordsList.Add($"[{item.Key.ToString()} :{item.Value}]");
             }
+            sb.Append(string.Join(" ", coordsList));
 
             return sb.ToString();
         }
