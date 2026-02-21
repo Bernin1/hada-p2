@@ -19,7 +19,7 @@ namespace Hada
         }
     }
 
-    //Evento cuando un barco es hundido
+    //Evento cuando se hunde un barco
     public class HundidoArgs
     {
         public string Nombre { get; }
