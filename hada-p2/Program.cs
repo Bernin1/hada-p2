@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Hada;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +10,7 @@ namespace hada_p2
     {
         static void Main(string[] args)
         {
+            new Game();
         }
     }
 }
