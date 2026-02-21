@@ -1,87 +1,112 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Hada
 {
     public class Tablero
     {
         // PROPIEDADES
-        public int Tamanyo { get; private set; }
+        public int TamTablero { get; private set; }
+        
+        private List<Coordenada> coordenadasDisparadas;
+        private List<Coordenada> coordenadasTocadas;
         private List<Barco> barcos;
-        private List<Coordenada> disparos; // Historial de disparos realizados
+        private List<Barco> barcosEliminados;
+        private Dictionary<Coordenada, string> casillasTablero;
 
-        // Constructor que recibe el tamaño
-        public Tablero(int tamanyo)
+        public event EventHandler<EventArgs> eventoFinPartida;
+
+        // Constructor que recibe el tamaño y la lista de barcos ya creados
+        public Tablero(int tamTablero, List<Barco> barcos)
         {
-            if (tamanyo < 5) throw new ArgumentException("El tablero debe ser al menos de 5x5");
+            if (tamTablero < 4 || tamTablero > 9)
+            {
+                throw new ArgumentException("El tamaño del tablero debe ser entre 4 y 9");
+            }
 
-            this.Tamanyo = tamanyo;
-            this.barcos = new List<Barco>();
-            this.disparos = new List<Coordenada>();
+            this.TamTablero = tamTablero;
+            this.barcos = barcos;
+            this.coordenadasDisparadas = new List<Coordenada>();
+            this.coordenadasTocadas = new List<Coordenada>();
+            this.barcosEliminados = new List<Barco>();
+            this.casillasTablero = new Dictionary<Coordenada, string>();
+
+            // Para cada barco, inicializar los eventos de tocado y hundido
+            foreach (var barco in this.barcos)
+            {
+                barco.eventoTocado += cuandoEventoTocado;
+                barco.eventoHundido += cuandoEventoHundido;
+            }
+
+            // Inicializar las casillas del tablero
+            inicializaCasillasTablero();
         }
 
-        // Método para añadir un barco con sus respectivas dimensiones sin que se junte con otro
-        public void AnyadirBarco(Barco nuevoBarco)
+        // Método privado para inicializar el tablero con AGUA o nombres de los barcos
+        private void inicializaCasillasTablero()
         {
-            // 1 Validar que el barco cabe dentro del tablero
-            foreach (var coord in nuevoBarco.CoordenadasBarco.Keys)
+            for (int i = 0; i < TamTablero; i++)
             {
-                if (coord.Fila < 0 || coord.Fila >= Tamanyo ||
-                    coord.Columna < 0 || coord.Columna >= Tamanyo)
+                for (int j = 0; j < TamTablero; j++)
                 {
-                    throw new ArgumentOutOfRangeException("El barco se sale de los límites del tablero.");
+                    Coordenada c = new Coordenada(i, j);
+                    casillasTablero.Add(c, "AGUA");
                 }
             }
 
-            // 2 Validar que no choca con otro barco ya existente
-            foreach (var barcoExistente in barcos)
+            foreach (var barco in barcos)
             {
-                var colision = barcoExistente.CoordenadasBarco.Keys.Intersect(nuevoBarco.CoordenadasBarco.Keys);
-
-                if (colision.Any())
+                foreach (var coord in barco.CoordenadasBarco)
                 {
-                    throw new Exception($"Colisión detectada con el barco {barcoExistente.Nombre} en {colision.First()}");
+                    if (casillasTablero.ContainsKey(coord.Key))
+                    {
+                        casillasTablero[coord.Key] = coord.Value;
+                    }
                 }
             }
-
-            // 3 Si pasa las validaciones, lo añadimos
-            this.barcos.Add(nuevoBarco);
         }
 
         // Método para disparar a una parte del tablero
         public void Disparar(Coordenada c)
         {
             // Mirar que el disparo se haga dentro del tablero
-            if (c.Fila < 0 || c.Fila >= Tamanyo || c.Columna < 0 || c.Columna >= Tamanyo)
+            if (c.Fila < 0 || c.Fila >= TamTablero || c.Columna < 0 || c.Columna >= TamTablero)
             {
-                Console.WriteLine("Disparo fuera de rango.");
-                return;
-            }
-
-            // Validar si ya se disparó ahí
-            if (disparos.Contains(c))
-            {
-                Console.WriteLine("YA DISPARADO: Ya habías disparado en esta coordenada.");
+                Console.WriteLine($"La coordenada {c.ToString()} está fuera de las dimensiones del tablero.");
                 return;
             }
 
             // Añadir al historial de disparos
-            disparos.Add(c);
+            coordenadasDisparadas.Add(c);
 
             // Comprobar si le damos a algún barco
             foreach (var barco in barcos)
             {
-                if (barco.CoordenadasBarco.ContainsKey(c))
+                barco.Disparo(c);
+            }
+        }
+
+        // Método para dibujar el estado visual del tablero
+        public string DibujarTablero()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < TamTablero; i++)
+            {
+                for (int j = 0; j < TamTablero; j++)
                 {
-                    barco.Disparar(c);
-                    return; 
+                    Coordenada c = new Coordenada(i, j);
+                    if (casillasTablero.ContainsKey(c))
+                    {
+                        sb.Append($"[{casillasTablero[c]}]");
+                    }
                 }
+                sb.AppendLine();
             }
 
-            Console.WriteLine("AGUA: No has tocado ningún barco.");
+            return sb.ToString();
         }
 
         // Método que devuelve un string con la info del tablero resultante
@@ -89,49 +114,63 @@ namespace Hada
         {
             StringBuilder sb = new StringBuilder();
 
-            // Cabecera de columnas (0 1 2 ...)
-            sb.Append("   ");
-            for (int k = 0; k < Tamanyo; k++) sb.Append($"{k} ");
+            // La información de cada uno de los Barcos
+            foreach (var barco in barcos)
+            {
+                sb.AppendLine(barco.ToString());
+            }
             sb.AppendLine();
 
-            for (int i = 0; i < Tamanyo; i++)
-            {
-                // Número de fila
-                sb.Append($"{i} |");
+            // La lista de 'Coordenadas Disparadas' y 'Tocadas'
+            sb.Append("Coordenadas disparadas: ");
+            sb.AppendLine(string.Join(" ", coordenadasDisparadas.Select(c => c.ToString())));
 
-                for (int j = 0; j < Tamanyo; j++)
-                {
-                    Coordenada actual = new Coordenada(i, j);
-                    string representacion = "~ "; 
+            sb.Append("Coordenadas tocadas: ");
+            sb.AppendLine(string.Join(" ", coordenadasTocadas.Select(c => c.ToString())));
+            sb.AppendLine();
 
-                    // Miramos si hay disparo
-                    if (disparos.Contains(actual))
-                    {
-                        // Si hay disparo, comprobamos si era barco o agua
-                        bool esTocado = false;
-                        foreach (var b in barcos)
-                        {
-                            if (b.CoordenadasBarco.ContainsKey(actual))
-                            {
-                                representacion = "X "; // Tocado
-                                esTocado = true;
-                                break;
-                            }
-                        }
-                        if (!esTocado) representacion = "o "; // Agua disparada
-                    }
-                    
-                    sb.Append(representacion);
-                }
-                sb.AppendLine();
-            }
+            // El tablero
+            sb.AppendLine("CASILLAS TABLERO");
+            sb.AppendLine("-------");
+            sb.Append(DibujarTablero());
+
             return sb.ToString();
         }
 
-        // Método para saber si quedan barcos vivos
-        public bool QuedanBarcos()
+        // Manejador privado del evento cuando un barco es tocado
+        private void cuandoEventoTocado(object sender, TocadoArgs e)
         {
-            return barcos.Any(b => b.NumDanyos < b.CoordenadasBarco.Count);
+            // Actualizar la casilla en el tablero
+            if (casillasTablero.ContainsKey(e.coordenadaImpacto))
+            {
+                casillasTablero[e.coordenadaImpacto] = e.nombre + "_T";
+            }
+
+            // Añadir a coordenadas tocadas verificando que no haya repetidos
+            if (!coordenadasTocadas.Contains(e.coordenadaImpacto))
+            {
+                coordenadasTocadas.Add(e.coordenadaImpacto);
+            }
+
+            Console.WriteLine($"TABLERO: Barco {e.nombre} tocado en Coordenada: [{e.coordenadaImpacto.ToString()}]");
+        }
+
+        // Manejador privado del evento cuando un barco es hundido
+        private void cuandoEventoHundido(object sender, HundidoArgs e)
+        {
+            Console.WriteLine($"TABLERO: Barco {e.nombre} hundido!!");
+
+            Barco b = sender as Barco;
+            if (b != null && !barcosEliminados.Contains(b))
+            {
+                barcosEliminados.Add(b);
+            }
+
+            // Comprobar si todos los barcos están hundidos
+            if (barcosEliminados.Count == barcos.Count)
+            {
+                eventoFinPartida?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 }
